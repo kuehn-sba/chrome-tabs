@@ -12,13 +12,6 @@
 
   const TAB_OVERLAP_DISTANCE = (TAB_CONTENT_MARGIN * 2) + TAB_CONTENT_OVERLAP_DISTANCE
 
-  const TAB_CONTENT_MIN_WIDTH = 24
-  const TAB_CONTENT_MAX_WIDTH = 240
-
-  const TAB_SIZE_SMALL = 84
-  const TAB_SIZE_SMALLER = 60
-  const TAB_SIZE_MINI = 48
-
   const noop = _ => {}
 
   const closest = (value, array) => {
@@ -35,21 +28,6 @@
     return closestIndex
   }
 
-  const tabTemplate = `
-    <div class="chrome-tab">
-      <div class="chrome-tab-dividers"></div>
-      <div class="chrome-tab-background">
-        <svg version="1.1" xmlns="http://www.w3.org/2000/svg"><defs><symbol id="chrome-tab-geometry-left" viewBox="0 0 214 36"><path d="M17 0h197v36H0v-2c4.5 0 9-3.5 9-8V8c0-4.5 3.5-8 8-8z"/></symbol><symbol id="chrome-tab-geometry-right" viewBox="0 0 214 36"><use xlink:href="#chrome-tab-geometry-left"/></symbol><clipPath id="crop"><rect class="mask" width="100%" height="100%" x="0"/></clipPath></defs><svg width="52%" height="100%"><use xlink:href="#chrome-tab-geometry-left" width="214" height="36" class="chrome-tab-geometry"/></svg><g transform="scale(-1, 1)"><svg width="52%" height="100%" x="-100%" y="0"><use xlink:href="#chrome-tab-geometry-right" width="214" height="36" class="chrome-tab-geometry"/></svg></g></svg>
-      </div>
-      <div class="chrome-tab-content">
-        <div class="chrome-tab-favicon"></div>
-        <div class="chrome-tab-title"></div>
-        <div class="chrome-tab-drag-handle"></div>
-        <div class="chrome-tab-close"></div>
-      </div>
-    </div>
-  `
-
   const defaultTapProperties = {
     title: 'New tab',
     favicon: false
@@ -58,8 +36,25 @@
   let instanceId = 0
 
   class ChromeTabs {
-    constructor() {
+    constructor(options) {
       this.draggabillies = []
+
+      this.options = options || {}
+
+      this.TAB_SIZE_SMALL = 84
+      this.TAB_SIZE_SMALLER = 60
+      this.TAB_SIZE_MINI = 48
+
+      this.TAB_CONTENT_MIN_WIDTH = 24
+      this.TAB_CONTENT_MAX_WIDTH = 240
+
+      if (options.shrinked) {
+        this.TAB_SIZE_SMALL = 44
+        this.TAB_SIZE_SMALLER = 20
+        this.TAB_SIZE_MINI = 8
+
+        this.TAB_CONTENT_MIN_WIDTH = 18
+      }
     }
 
     init(el) {
@@ -115,7 +110,7 @@
       const tabsContentWidth = this.tabContentEl.clientWidth
       const tabsCumulativeOverlappedWidth = (numberOfTabs - 1) * TAB_CONTENT_OVERLAP_DISTANCE
       const targetWidth = (tabsContentWidth - (2 * TAB_CONTENT_MARGIN) + tabsCumulativeOverlappedWidth) / numberOfTabs
-      const clampedTargetWidth = Math.max(TAB_CONTENT_MIN_WIDTH, Math.min(TAB_CONTENT_MAX_WIDTH, targetWidth))
+      const clampedTargetWidth = Math.max(this.TAB_CONTENT_MIN_WIDTH, Math.min(this.TAB_CONTENT_MAX_WIDTH, targetWidth))
       const flooredClampedTargetWidth = Math.floor(clampedTargetWidth)
       const totalTabsWidthUsingTarget = (flooredClampedTargetWidth * numberOfTabs) + (2 * TAB_CONTENT_MARGIN) - tabsCumulativeOverlappedWidth
       const totalExtraWidthDueToFlooring = tabsContentWidth - totalTabsWidthUsingTarget
@@ -124,7 +119,7 @@
       const widths = []
       let extraWidthRemaining = totalExtraWidthDueToFlooring
       for (let i = 0; i < numberOfTabs; i += 1) {
-        const extraWidth = flooredClampedTargetWidth < TAB_CONTENT_MAX_WIDTH && extraWidthRemaining > 0 ? 1 : 0
+        const extraWidth = flooredClampedTargetWidth < this.TAB_CONTENT_MAX_WIDTH && extraWidthRemaining > 0 ? 1 : 0
         widths.push(flooredClampedTargetWidth + extraWidth)
         if (extraWidthRemaining > 0) extraWidthRemaining -= 1
       }
@@ -168,9 +163,9 @@
         tabEl.removeAttribute('is-smaller')
         tabEl.removeAttribute('is-mini')
 
-        if (contentWidth < TAB_SIZE_SMALL) tabEl.setAttribute('is-small', '')
-        if (contentWidth < TAB_SIZE_SMALLER) tabEl.setAttribute('is-smaller', '')
-        if (contentWidth < TAB_SIZE_MINI) tabEl.setAttribute('is-mini', '')
+        if (contentWidth < this.TAB_SIZE_SMALL) tabEl.setAttribute('is-small', '')
+        if (contentWidth < this.TAB_SIZE_SMALLER) tabEl.setAttribute('is-smaller', '')
+        if (contentWidth < this.TAB_SIZE_MINI) tabEl.setAttribute('is-mini', '')
       })
 
       let styleHTML = ''
@@ -186,6 +181,40 @@
 
     createNewTabEl() {
       const div = document.createElement('div')
+
+      // template
+      var tabTemplate = 
+        '<div class="chrome-tab">' +
+          '<div class="chrome-tab-dividers"></div>' +
+          '<div class="chrome-tab-background">' +
+            '<svg version="1.1" xmlns="http://www.w3.org/2000/svg">' +
+              '<defs>' +
+                '<symbol id="chrome-tab-geometry-left" viewBox="0 0 214 36"><path d="M17 0h197v36H0v-2c4.5 0 9-3.5 9-8V8c0-4.5 3.5-8 8-8z"/></symbol>' +
+                '<symbol id="chrome-tab-geometry-right" viewBox="0 0 214 36"><use xlink:href="#chrome-tab-geometry-left"/></symbol>' +
+                '<clipPath id="crop"><rect class="mask" width="100%" height="100%" x="0"/></clipPath>' +
+              '</defs>' +
+              '<svg width="52%" height="100%">' +
+                '<use xlink:href="#chrome-tab-geometry-left" width="214" height="36" class="chrome-tab-geometry"/>' +
+              '</svg>' +
+              '<g transform="scale(-1, 1)">' +
+                '<svg width="52%" height="100%" x="-100%" y="0">' +
+                  '<use xlink:href="#chrome-tab-geometry-right" width="214" height="36" class="chrome-tab-geometry"/>' +
+                '</svg>' +
+              '</g>' +
+            '</svg>' +
+          '</div>' +
+          '<div class="chrome-tab-content">' +
+            '<div class="chrome-tab-favicon"></div>' +
+            '<div class="chrome-tab-title"></div>' +
+            '<div class="chrome-tab-drag-handle"></div>';
+
+            // ignore delete button
+            if (!this.options.nodelete)
+              tabTemplate += '<div class="chrome-tab-close"></div>';
+
+        // close
+        tabTemplate += '</div></div>'
+
       div.innerHTML = tabTemplate
       return div.firstElementChild
     }
@@ -210,7 +239,8 @@
     }
 
     setTabCloseEventListener(tabEl) {
-      tabEl.querySelector('.chrome-tab-close').addEventListener('click', _ => this.removeTab(tabEl))
+      if (!this.options.nodelete)
+        tabEl.querySelector('.chrome-tab-close').addEventListener('click', _ => this.removeTab(tabEl))
     }
 
     get activeTabEl() {
