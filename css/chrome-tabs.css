@@ -8,6 +8,11 @@
   background: #dee1e6;
   border-radius: 5px 5px 0 0;
   overflow: hidden;
+
+  &.small {
+    height: 32px;
+    padding: 0px 3px 4px 3px;
+  }
 }
 .chrome-tabs * {
   box-sizing: inherit;
