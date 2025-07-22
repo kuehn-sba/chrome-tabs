@@ -55,6 +55,13 @@
 
         this.TAB_CONTENT_MIN_WIDTH = 18
       }
+
+      // add controller to cleanup listener:
+      // https://stackoverflow.com/a/69225064
+      // https://developer.mozilla.org/en-US/docs/Web/API/AbortController
+
+      if (typeof AbortController == 'function')
+        this.abortController = new AbortController();
     }
 
     init(el) {
@@ -88,11 +95,14 @@
       window.addEventListener('resize', _ => {
         this.cleanUpPreviouslyDraggedTabs()
         this.layoutTabs()
-      })
+      }, { signal: this.abortController.signal })
 
-      this.el.addEventListener('dblclick', event => {
-        if ([this.el, this.tabContentEl].includes(event.target)) this.addTab()
-      })
+      // ignore auto tab
+      if (!this.options.noautotab) {
+        this.el.addEventListener('dblclick', event => {
+          if ([this.el, this.tabContentEl].includes(event.target)) this.addTab()
+        }, { signal: this.abortController.signal })
+      }
 
       this.tabEls.forEach((tabEl) => this.setTabCloseEventListener(tabEl))
     }
@@ -240,7 +250,7 @@
 
     setTabCloseEventListener(tabEl) {
       if (!this.options.nodelete)
-        tabEl.querySelector('.chrome-tab-close').addEventListener('click', _ => this.removeTab(tabEl))
+        tabEl.querySelector('.chrome-tab-close').addEventListener('click', _ => this.removeTab(tabEl), { signal: this.abortController.signal })
     }
 
     get activeTabEl() {
@@ -384,6 +394,29 @@
       }
       this.emit('tabReorder', { tabEl, originIndex, destinationIndex })
       this.layoutTabs()
+    }
+
+    destroy() {
+
+      // remove tabs
+      var len = this.tabEls.length;
+      for (var i = len-1; i >= 0; i--) this.removeTab(this.tabEls[i]);
+
+      // cleanup listeners
+      if (this.abortController) {
+
+        // remove listeners
+        this.abortController.abort()
+
+        // delete abortController
+        delete this.abortController;
+        this.abortController = null;
+      }
+
+      // destroy
+      if (this.isDragging)
+        this.draggabillyDragging.destroy();
+      this.draggabillies.forEach(d => d.destroy());
     }
   }
 
